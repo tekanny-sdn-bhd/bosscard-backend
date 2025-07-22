@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import { getRepository } from 'typeorm';
-import { Card } from './card.entity';
+import pool from '../config/database';
 import { authMiddleware } from '../auth/auth.middleware';
 
 const router = Router();
@@ -8,44 +7,47 @@ const router = Router();
 router.use(authMiddleware);
 
 router.post('/', async (req, res) => {
-  const cardRepository = getRepository(Card);
-  const card = cardRepository.create({ ...req.body, user: (req as any).userId });
-  const result = await cardRepository.save(card);
-  res.status(201).json(result);
+  const { title, description } = req.body;
+  const userId = (req as any).userId;
+  const [result] = await pool.query('INSERT INTO card (title, description, userId) VALUES (?, ?, ?)', [title, description, userId]);
+  res.status(201).json({ id: (result as any).insertId, title, description, userId });
 });
 
 router.get('/', async (req, res) => {
-  const cardRepository = getRepository(Card);
-  const cards = await cardRepository.find({ where: { user: { id: (req as any).userId } } });
-  res.json(cards);
+  const userId = (req as any).userId;
+  const [rows] = await pool.query('SELECT * FROM card WHERE userId = ?', [userId]);
+  res.json(rows);
 });
 
 router.get('/:id', async (req, res) => {
-  const cardRepository = getRepository(Card);
-  const card = await cardRepository.findOne({ where: { id: Number(req.params.id), user: { id: (req as any).userId } } });
-  if (card) {
-    res.json(card);
+  const userId = (req as any).userId;
+  const [rows] = await pool.query('SELECT * FROM card WHERE id = ? AND userId = ?', [req.params.id, userId]);
+  if ((rows as any).length > 0) {
+    res.json((rows as any)[0]);
   } else {
     res.status(404).json({ message: 'Card not found' });
   }
 });
 
 router.put('/:id', async (req, res) => {
-  const cardRepository = getRepository(Card);
-  const card = await cardRepository.findOne({ where: { id: Number(req.params.id), user: { id: (req as any).userId } } });
-  if (card) {
-    cardRepository.merge(card, req.body);
-    const result = await cardRepository.save(card);
-    res.json(result);
+  const { title, description } = req.body;
+  const userId = (req as any).userId;
+  const [result] = await pool.query('UPDATE card SET title = ?, description = ? WHERE id = ? AND userId = ?', [title, description, req.params.id, userId]);
+  if ((result as any).affectedRows > 0) {
+    res.json({ id: req.params.id, title, description, userId });
   } else {
     res.status(404).json({ message: 'Card not found' });
   }
 });
 
 router.delete('/:id', async (req, res) => {
-  const cardRepository = getRepository(Card);
-  const result = await cardRepository.delete({ id: Number(req.params.id), user: { id: (req as any).userId } });
-  res.json(result);
+  const userId = (req as any).userId;
+  const [result] = await pool.query('DELETE FROM card WHERE id = ? AND userId = ?', [req.params.id, userId]);
+  if ((result as any).affectedRows > 0) {
+    res.json({ message: 'Card deleted' });
+  } else {
+    res.status(404).json({ message: 'Card not found' });
+  }
 });
 
 export default router;
