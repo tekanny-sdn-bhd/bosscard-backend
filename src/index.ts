@@ -1,12 +1,11 @@
-import 'reflect-metadata';
 import express from 'express';
 import dotenv from 'dotenv';
-
-dotenv.config();
-import { connectDatabase } from './config/database';
+import pool from './config/database';
 import authRouter from './auth/auth.controller';
 import userRouter from './user/user.controller';
 import cardRouter from './card/card.controller';
+
+dotenv.config();
 
 const app = express();
 app.use(express.json());
@@ -17,8 +16,11 @@ app.use('/cards', cardRouter);
 
 const PORT = process.env.PORT || 3000;
 
-connectDatabase().then(() => {
+pool.getConnection().then(() => {
+  console.log('Database connected successfully');
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
   });
+}).catch(error => {
+  console.error('Database connection error:', error);
 });
