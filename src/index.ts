@@ -10,9 +10,9 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-app.use('/auth', authRouter);
-app.use('/users', userRouter);
-app.use('/cards', cardRouter);
+app.use('/api/auth', authRouter);
+app.use('/api/users', userRouter);
+app.use('/api/cards', cardRouter);
 
 const PORT = process.env.PORT || 3000;
 
