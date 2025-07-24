@@ -1,5 +1,6 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import cors from 'cors';
 import pool from './config/database';
 import authRouter from './auth/auth.controller';
 import userRouter from './user/user.controller';
@@ -9,6 +10,7 @@ dotenv.config();
 
 const app = express();
 app.use(express.json());
+app.use(cors());
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
